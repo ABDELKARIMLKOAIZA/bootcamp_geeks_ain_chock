@@ -16,7 +16,7 @@ for i in range(1, 21,2):
     print(i+1, end=" ")
 # ------ Exercise 3
 name = input("Quel est votre nom ? ")
-while name==karim:
+while name=="karim":
     name = input("Quel est votre nom ? ")
 
 # ------ Exercise 4
@@ -47,6 +47,3 @@ if x == y :
     print("Vous avez gagné !")
 else:
     print(f"Vous avez perdu ! Le nombre était {y}")
-# ------ Exercise 7
-
-# ------ Exercise 8
