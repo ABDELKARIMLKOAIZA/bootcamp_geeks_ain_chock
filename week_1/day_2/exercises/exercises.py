@@ -35,8 +35,6 @@ for i in range(x):
     age = int(input("Entrez votre âge : "))
     famille[nom] = age
 
-
-
 print("\nDétails de la famille :", famille)
 
 # Afficher combien chaque membre doit payer
