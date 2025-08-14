@@ -132,7 +132,7 @@ print(new_york_zoo.add_animal('Giraffe'))
 
 
         
-# ------ Exercise 5
+#  Exercise 5
 
 # ------ Exercise 6
 
