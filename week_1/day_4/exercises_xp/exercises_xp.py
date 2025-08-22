@@ -1,133 +1,74 @@
-from functools import reduce
+import math
 
-# ------ Exercise 1
+class Pagination:
+    def __init__(self, items=None, page_size=10):
+        if items is None:
+            items = []
+        self.items = items
+        self.page_size = page_size
+        self.current_idx = 0
+        self.total_pages = math.ceil(len(self.items) / self.page_size) if self.page_size > 0 else 0
 
-class Pets():
-    def __init__(self, animals):
-        self.animals = animals
+    def get_visible_items(self):
+        start = self.current_idx * self.page_size
+        end = start + self.page_size
+        return self.items[start:end]
 
-    def walk(self):
-        for animal in self.animals:
-            print(animal.walk())
+    def go_to_page(self, page_num):
+        if page_num < 1 or page_num > max(self.total_pages, 1):
+            raise ValueError("Page number out of range")
+        self.current_idx = page_num - 1
 
-class Cat():
-    is_lazy = True
+    def first_page(self):
+        self.current_idx = 0
+        return self
 
-    def __init__(self, name, age):
-        self.name = name
-        self.age = age
+    def last_page(self):
+        if self.total_pages > 0:
+            self.current_idx = self.total_pages - 1
+        else:
+            self.current_idx = 0
+        return self
 
-    def walk(self):
-        return f'{self.name} is just walking around'
+    def next_page(self):
+        if self.current_idx < self.total_pages - 1:
+            self.current_idx += 1
+        return self
 
-class Bengal(Cat):
-    def sing(self, sounds):
-        return f'{sounds}'
+    def previous_page(self):
+        if self.current_idx > 0:
+            self.current_idx -= 1
+        return self
 
-class Chartreux(Cat):
-    def sing(self, sounds):
-        return f'{sounds}'
-
-
-class Siamese(Cat):
-    def sing(self, sounds):
-        return f'{sounds}'
-
-cat1 = Bengal("mimi",3)
-cat2 = Chartreux("chifo",4)
-cat3 = Siamese("ili",2)
-
-all_cats = [cat1,cat2,cat3]
-
-sara_pets = Pets(all_cats)
-
-sara_pets.walk()
-
-# ------ Exercise 2
-
-class Dog():
-
-    def __init__(self,name,age,weight):
-        self.name = name
-        self.age = age
-        self.weight = weight
-        self.code = 10
-
-    def bark(self):
-        return f"{self.name} is barking"
-    
-    def run_speed(self):
-        return float(self.weight / (self.age * 10))
-    
-    def fight(self, other_dog):
-        return f"The dog {self.name if self.run_speed() > other_dog.run_speed() else other_dog.name} is the winner."
-
-# ------ Exercise 3
-
-#dog_file.py 
-
-# ------ Exercise 4
-
-class Family:
-    
-    def __init__(self, members, last_name):
-        self.members = members
-        self.last_name = last_name
-
-    def born(self,**kwargs):
-        self.members.append(kwargs)
-
-    def is_18(self, name):
-        for member in self.members:
-            if member["name"] == name:
-                return True if member["age"] >= 18 else False
-            
-        return "don't find this member"
-
-    def family_presentation(self):
-        print(f"The family's last name is {self.last_name}")
-        for member in self.members:
-            print(f"Name : {member["name"]}")
-            print(f"Age : {member["age"]}")
-            print(f"Gender : {member["gender"]}")
-            print(f"Is child : {member["is_child"]}")
-            print("####################################")
-
-a_family = Family(    [
-        {'name':'Michael','age':35,'gender':'Male','is_child':False},
-        {'name':'Sarah','age':32,'gender':'Female','is_child':False}
-    ],"jack")
+    def __str__(self):
+        return "\n".join(str(item) for item in self.get_visible_items())
 
 
-# ------ Exercise 5
+# Test cases
+if __name__ == "__main__":
+    alphabetList = list("abcdefghijklmnopqrstuvwxyz")
+    p = Pagination(alphabetList, 4)
 
-class TheIncredibles(Family):
-    def __init__(self, members, last_name):
-        super().__init__(members, last_name)
+    print(p.get_visible_items())
+    # ['a', 'b', 'c', 'd']
 
-    def use_power(self):
-        return f"{self.incredible_name} is using {self.power} power" if self.is_18(self.incredible_name) else "This member is not 18 years old, so they cannot use their power."
+    p.next_page()
+    print(p.get_visible_items())
+    # ['e', 'f', 'g', 'h']
 
-    def incredible_presentation(self):
-        print("*Here is our powerful family **")
-        print(f"The family's last name is {self.last_name}")
-        for member in self.members:
-            print(f"name : {member['name']}")
-            print(f"age : {member['age']}")
-            print(f"gender : {member['gender']}")
-            print(f"is child : {member['is_child']}")
-            print("####################################")
+    p.last_page()
+    print(p.get_visible_items())
+    # ['y', 'z']
 
-incredibles = TheIncredibles(
-    members=[
-        {'name':'Michael','age':35,'gender':'Male','is_child':False,'power': 'fly','incredible_name':'MikeFly'},
-        {'name':'Sarah','age':32,'gender':'Female','is_child':False,'power': 'read minds','incredible_name':'SuperWoman'}
-    ],
-    last_name="Par",
-)
+    try:
+        p.go_to_page(10)
+    except ValueError as e:
+        print(e)
+    print(p.current_idx + 1)
+    # Output: 7
 
-incredibles.incredible_presentation()
-
-incredibles.born(name='Jack', age=5, gender='Male', is_child=True, power='“Unknown Power')
-
-incredibles.family_presentation()
+    try:
+        p.go_to_page(0)
+    except ValueError as e:
+        print(e)
+    # Raises ValueError
