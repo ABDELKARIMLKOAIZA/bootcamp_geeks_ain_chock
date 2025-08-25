@@ -1,5 +1,6 @@
 # ------ Exercise 1
 # Chaîne initiale
+
 cars_str = "Volkswagen, Toyota, Ford Motor, Honda, Chevrolet"
 
 
