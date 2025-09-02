@@ -44,3 +44,17 @@ VALUES
 -- Thanks to ON DELETE CASCADE, all reviews linked to that film will be automatically deleted.
 DELETE FROM new_film WHERE id = 1;
 
+
+
+-- Q2: Foreign keys of customer table
+SELECT tc.constraint_name, kcu.column_name, 
+       ccu.table_name AS foreign_table, 
+       ccu.column_name AS foreign_column
+FROM information_schema.table_constraints AS tc
+JOIN information_schema.key_column_usage AS kcu
+  ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage AS ccu
+  ON ccu.constraint_name = tc.constraint_name
+WHERE tc.table_name = 'customer' AND tc.constraint_type = 'FOREIGN KEY';
+
+
