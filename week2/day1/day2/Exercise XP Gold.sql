@@ -10,20 +10,20 @@ order by title;
 
 
 UPDATE customer
-set first_name = 'Zakaria',
-	last_name = 'Fadli',
-	email = 'zakaria.fadli@gmail.com'
+set first_name = 'abdelkarim',
+	last_name = 'lkoaiza',
+	email = 'karim@gmail.com'
 where customer.customer_id = 524
 
 UPDATE address
-set address.address = '23 Ain chock'
+set address.address = ' Ain chock'
 where (select * from customer where customer_id = 549)
 
 -- Exercise 2
 -- 1
 update students
-set brith_dates = '02/11/1998'
-where last_name = 'Benichou'and first_name in ('Marc','Lea')
+set brith_dates = '06/12/1998'
+where last_name = 'lkoaiza'and first_name in ('Marc','Lea')
 
 
 -- 2
