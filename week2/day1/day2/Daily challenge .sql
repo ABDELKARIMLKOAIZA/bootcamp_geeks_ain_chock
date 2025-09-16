@@ -1,19 +1,14 @@
--- Q1: SELECT COUNT(*)
---     FROM FirstTab AS ft 
---     WHERE ft.id NOT IN ( SELECT id FROM SecondTab WHERE id IS NULL );
--- Réponse: 3
+SQL Puzzle Answers
 
--- Q2: SELECT COUNT(*)
---     FROM FirstTab AS ft 
---     WHERE ft.id NOT IN ( SELECT id FROM SecondTab WHERE id = 5 );
--- Réponse: 1
+Q1:
+Output = 0
 
--- Q3: SELECT COUNT(*)
---     FROM FirstTab AS ft 
---     WHERE ft.id NOT IN ( SELECT id FROM SecondTab );
--- Réponse: 0
+Q2:
+Output = 2
 
--- Q4: SELECT COUNT(*)
---     FROM FirstTab AS ft 
---     WHERE ft.id NOT IN ( SELECT id FROM SecondTab WHERE id IS NOT NULL );
--- Réponse: 1
+Q3:
+Output = 0
+
+Q4:
+Output = 2
+
