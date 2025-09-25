@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Coloring Squares</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --size: 20; } /* grid is --size x --size */
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, Arial, sans-serif; margin: 20px; display: grid; gap: 16px; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .palette { display: grid; grid-template-columns: repeat(10, 24px); gap: 6px; }
+    .swatch {
+      width: 24px; height: 24px; border-radius: 4px; border: 2px solid #00000020; cursor: pointer;
+    }
+    .swatch.selected { outline: 2px solid #111; outline-offset: 2px; }
+    .btn { padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; background: #f6f6f6; cursor: pointer; }
+    .board {
+      --cell: min(24px, 2.6vw);
+      display: grid;
+      grid-template-columns: repeat(var(--size), var(--cell));
+      grid-template-rows: repeat(var(--size), var(--cell));
+      gap: 1px;
+      background: #ddd;
+      width: max-content;
+      user-select: none;
+      touch-action: none; /* avoid scrolling while drawing on mobile trackpads */
+    }
+    .cell {
+      width: var(--cell); height: var(--cell);
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Coloring Squares</h1>
+
+  <div class="toolbar">
+    <div class="palette" id="palette"></div>
+    <button class="btn" id="eraser">Eraser</button>
+    <button class="btn" id="clear">Clear</button>
+    <label class="btn" style="display:flex;align-items:center;gap:6px;">
+      Size
+      <input id="size" type="number" min="4" max="64" value="20" style="width:64px;">
+      <span>×</span><span id="sizeLabel">20</span>
+    </label>
+  </div>
+
+  <div class="board" id="board" aria-label="drawing grid"></div>
+
+  <script>
+    // ----- Setup -----
+    const colors = [
+      '#000000','#7f7f7f','#ffffff',
+      '#e6194B','#f58231','#ffe119','#bfef45','#3cb44b','#42d4f4','#4363d8','#911eb4','#f032e6',
+      '#a52a2a','#8B4513','#FF8C00','#FFD700','#ADFF2F','#20B2AA','#00CED1','#1E90FF','#6A5ACD','#C71585'
+    ];
+    const paletteEl = document.getElementById('palette');
+    const boardEl   = document.getElementById('board');
+    const eraserBtn = document.getElementById('eraser');
+    const clearBtn  = document.getElementById('clear');
+    const sizeInput = document.getElementById('size');
+    const sizeLabel = document.getElementById('sizeLabel');
+
+    let currentColor = colors[3]; // default a nice red
+    let drawing = false;
+    let eraseMode = false;
+
+    // Create palette
+    colors.forEach((c, i) => {
+      const sw = document.createElement('button');
+      sw.className = 'swatch' + (i === 3 ? ' selected' : '');
+      sw.style.background = c;
+      sw.setAttribute('type', 'button');
+      sw.addEventListener('click', () => {
+        eraseMode = false;
+        currentColor = c;
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+      });
+      paletteEl.appendChild(sw);
+    });
+
+    // Build grid
+    function buildBoard(n) {
+      document.documentElement.style.setProperty('--size', n);
+      boardEl.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < n*n; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        frag.appendChild(cell);
+      }
+      boardEl.appendChild(frag);
+    }
+
+    // Paint helper
+    function paint(target) {
+      if (!target.classList.contains('cell')) return;
+      target.style.background = eraseMode ? '#fff' : currentColor;
+    }
+
+    // Mouse events
+    boardEl.addEventListener('mousedown', (e) => { drawing = true; paint(e.target); });
+    boardEl.addEventListener('mouseover', (e) => { if (drawing) paint(e.target); });
+    window.addEventListener('mouseup', () => drawing = false);
+
+    // Touch / pointer fallback (optional but handy)
+    boardEl.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; paint(document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY)); }, {passive:false});
+    boardEl.addEventListener('touchmove', (e) => { e.preventDefault(); if (!drawing) return; paint(document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY)); }, {passive:false});
+    window.addEventListener('touchend', () => drawing = false);
+
+    // Controls
+    eraserBtn.addEventListener('click', () => { eraseMode = true; document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected')); });
+    clearBtn.addEventListener('click', () => { boardEl.querySelectorAll('.cell').forEach(c => c.style.background = '#fff'); });
+
+    sizeInput.addEventListener('change', () => {
+      let n = parseInt(sizeInput.value, 10);
+      if (Number.isNaN(n)) n = 20;
+      n = Math.min(64, Math.max(4, n));
+      sizeInput.value = n;
+      sizeLabel.textContent = n;
+      buildBoard(n);
+    });
+
+    // Init
+    buildBoard(parseInt(sizeInput.value, 10));
+  </script>
+</body>
+</html>
