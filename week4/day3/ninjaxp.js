@@ -1,4 +1,3 @@
-// Exercise 1 : Bird class
 class Bird {
   constructor() {
     console.log("I'm a bird. 🦢");
@@ -8,8 +7,11 @@ class Bird {
 class Flamingo extends Bird {
   constructor() {
     console.log("I'm pink. 🌸");
-    super();
+    super(); // calls Bird constructor
   }
 }
 
-const pet = new Flamingo();
+const pet = new Flamingo(); 
+// Output:
+// I'm pink. 🌸
+// I'm a bird. 🦢
