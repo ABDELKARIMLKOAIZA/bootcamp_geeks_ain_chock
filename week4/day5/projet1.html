@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>RoboFriends — Filter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#3b2ea3; --panel:#66d19e; --card:#1aa5a0; --ink:#0a0a0a; --muted:#556; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, Arial, sans-serif; color:#111; background:#5b51d0; }
+    header {
+      position: sticky; top:0; z-index:2;
+      background:var(--panel); padding:14px 16px; border-bottom:2px solid #3aa87a;
+      display:flex; align-items:center; gap:12px;
+    }
+    .brand { font-weight:800; letter-spacing:1px; }
+    #q {
+      flex:1; padding:10px 14px; border-radius:10px; border:1px solid #3aa87a;
+      outline:none; background:#eafff4;
+    }
+    main {
+      min-height: 100vh;
+      background-image: url('https://i.imgur.com/Z8f2J0q.png'); /* PCB bg. Use your own if you want */
+      background-size: 800px;
+      padding: 24px 16px 48px;
+    }
+    .grid {
+      max-width: 1100px; margin: 0 auto;
+      display:grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr));
+      gap:18px;
+    }
+    .card {
+      background:#39c5bf; border:2px solid #118a86; border-radius:18px;
+      padding:14px; box-shadow:0 8px 28px rgba(0,0,0,.25);
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow:0 12px 34px rgba(0,0,0,.32); }
+    .avatar {
+      width:160px; height:160px; border-radius:50%; object-fit:cover; border:4px solid #0f7773;
+      background:#d9fffb;
+    }
+    .name { margin:10px 0 2px; font-weight:800; color:#063; }
+    .email { margin:0; color:#073b3a; font-size:.95rem; word-break: break-all;}
+    .username { margin:4px 0 0; color:#064E3B; font-size:.9rem; }
+    .count { max-width: 1100px; margin: 8px auto 0; color:#e5f7ff; }
+    .hide { display:none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">ROBOFRIENDS</div>
+    <input id="q" type="search" placeholder="Type a name… (e.g., nic)" autocomplete="off" />
+  </header>
+
+  <main>
+    <div class="count" id="count"></div>
+    <section id="grid" class="grid" aria-live="polite"></section>
+  </main>
+
+  <script>
+    // ----- ASSETS -----
+    const robots = [
+      { id: 1,  name: 'Leanne Graham',            username: 'Bret',              email: 'Sincere@april.biz',            image: 'https://robohash.org/1?200x200'  },
+      { id: 2,  name: 'Ervin Howell',             username: 'Antonette',         email: 'Shanna@melissa.tv',            image: 'https://robohash.org/2?200x200'  },
+      { id: 3,  name: 'Clementine Bauch',         username: 'Samantha',          email: 'Nathan@yesenia.net',           image: 'https://robohash.org/3?200x200'  },
+      { id: 4,  name: 'Patricia Lebsack',         username: 'Karianne',          email: 'Julianne.OConner@kory.org',    image: 'https://robohash.org/4?200x200'  },
+      { id: 5,  name: 'Chelsey Dietrich',         username: 'Kamren',            email: 'Lucio_Hettinger@annie.ca',     image: 'https://robohash.org/5?200x200'  },
+      { id: 6,  name: 'Mrs. Dennis Schulist',     username: 'Leopoldo_Corkery',  email: 'Karley_Dach@jasper.info',      image: 'https://robohash.org/6?200x200'  },
+      { id: 7,  name: 'Kurtis Weissnat',          username: 'Elwyn.Skiles',      email: 'Telly.Hoeger@billy.biz',       image: 'https://robohash.org/7?200x200'  },
+      { id: 8,  name: 'Nicholas Runolfsdottir V', username: 'Maxime_Nienow',     email: 'Sherwood@rosamond.me',         image: 'https://robohash.org/8?200x200'  },
+      { id: 9,  name: 'Glenna Reichert',          username: 'Delphine',          email: 'Chaim_McDermott@dana.io',      image: 'https://robohash.org/9?200x200'  },
+      { id: 10, name: 'Clementina DuBuque',       username: 'Moriah.Stanton',    email: 'Rey.Padberg@karina.biz',       image: 'https://robohash.org/10?200x200' }
+    ];
+
+    // ----- DOM refs -----
+    const grid = document.getElementById('grid');
+    const q = document.getElementById('q');
+    const count = document.getElementById('count');
+
+    // ----- Render helpers -----
+    const createCard = ({ id, name, username, email, image }) => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.dataset.id = id;
+
+      card.innerHTML = `
+        <img class="avatar" src="${image}" alt="Robot ${name}" loading="lazy">
+        <h3 class="name">${name}</h3>
+        <p class="email">${email}</p>
+        <p class="username">@${username}</p>
+      `;
+      return card;
+    };
+
+    const renderAll = (items) => {
+      grid.replaceChildren(...items.map(createCard));
+      setCount(items.length);
+    };
+
+    const setCount = (n) => {
+      const total = robots.length;
+      count.textContent = n === total ? `Showing all ${total} robots`
+                                      : `Showing ${n} / ${total} robots`;
+    };
+
+    // ----- Filter logic -----
+    const filterByName = (needle) => {
+      const s = needle.trim().toLowerCase();
+      if (!s) return robots;
+      return robots.filter(r => r.name.toLowerCase().includes(s));
+    };
+
+    // Debounce to keep it smooth when typing fast
+    const debounce = (fn, ms=120) => {
+      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    };
+
+    const onSearch = () => renderAll(filterByName(q.value));
+    q.addEventListener('input', debounce(onSearch, 80));
+
+    // ----- Init -----
+    renderAll(robots);
+  </script>
+</body>
+</html>
