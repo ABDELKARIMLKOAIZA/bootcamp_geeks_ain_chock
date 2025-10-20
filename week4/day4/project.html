@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Random Quote Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { font-family: system-ui, Arial, sans-serif; }
+    body { margin: 0; background:#0f172a; color:#e2e8f0; }
+    .wrap { max-width: 900px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin: 0 0 16px; font-weight: 700; }
+    section.card {
+      background:#111827; border:1px solid #1f2937; border-radius:14px;
+      padding:20px; box-shadow: 0 8px 30px rgba(0,0,0,.25);
+    }
+    .quote { font-size: 1.4rem; line-height: 1.6; margin: 0 0 8px; }
+    .author { color:#93c5fd; margin: 0 0 8px; }
+    .muted { color:#9ca3af; font-size:.95rem; }
+    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .row + .row { margin-top: 10px; }
+    button, input[type="text"] {
+      border-radius:10px; padding:10px 14px; border:1px solid #334155; background:#0b1220; color:#e2e8f0;
+    }
+    button:hover { background:#111c31; cursor:pointer; }
+    input[type="text"] { flex: 1 1 220px; }
+    form { display:flex; flex-wrap:wrap; gap:8px; margin-top: 14px; }
+    .pill { background:#0b1220; border:1px solid #334155; padding:6px 10px; border-radius:999px; font-size:.9rem; }
+    .spacer { height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Random Quote Generator</h1>
+
+    <!-- Display card -->
+    <section id="quoteCard" class="card">
+      <p id="quoteText" class="quote">Click “Generate Quote” to begin.</p>
+      <p id="quoteAuthor" class="author"></p>
+      <p class="muted">
+        <span id="quoteId" class="pill">id: –</span>
+        <span id="likes" class="pill">❤ 0</span>
+      </p>
+
+      <div class="row">
+        <button id="btnGenerate">Generate Quote</button>
+        <button id="btnLike">Like ❤</button>
+        <button id="btnCharsInc"># chars (with spaces)</button>
+        <button id="btnCharsExc"># chars (no spaces)</button>
+        <button id="btnWords"># words</button>
+      </div>
+    </section>
+
+    <div class="spacer"></div>
+
+    <!-- Add Quote form -->
+    <section class="card">
+      <h2 style="margin:0 0 8px">Add a Quote</h2>
+      <form id="addForm">
+        <input id="newQuote" type="text" placeholder="Quote…" required />
+        <input id="newAuthor" type="text" placeholder="Author…" required />
+        <button type="submit">Add</button>
+      </form>
+      <p class="muted" id="addInfo"></p>
+    </section>
+
+    <div class="spacer"></div>
+
+    <!-- Filter by author -->
+    <section class="card">
+      <h2 style="margin:0 0 8px">Filter by Author</h2>
+      <form id="filterForm">
+        <input id="filterAuthor" type="text" placeholder="Author name…" />
+        <button type="submit">Filter</button>
+        <button type="button" id="btnClearFilter">Clear</button>
+      </form>
+      <div class="row">
+        <button id="btnPrev">Previous</button>
+        <button id="btnNext">Next</button>
+        <span id="filterStatus" class="muted"></span>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    /******** State ********/
+    let quotes = [
+      { id: 0, author: "Oscar Wilde", quote: "Be yourself; everyone else is already taken.", likes: 0 },
+      { id: 1, author: "Mae West", quote: "You only live once, but if you do it right, once is enough.", likes: 0 },
+      { id: 2, author: "Albert Einstein", quote: "Life is like riding a bicycle. To keep your balance, you must keep moving.", likes: 0 },
+      { id: 3, author: "Maya Angelou", quote: "You will face many defeats in life, but never let yourself be defeated.", likes: 0 },
+      { id: 4, author: "Yoda", quote: "Do or do not. There is no try.", likes: 0 }
+    ];
+
+    let currentIndex = null;               // index in quotes[]
+    let previousIndex = null;              // to avoid immediate repetition
+    let filteredIndices = [];              // indices of quotes matching author filter
+    let filteredCursor = 0;                // position inside filteredIndices
+
+    /******** DOM refs ********/
+    const elQuote = document.getElementById("quoteText");
+    const elAuthor = document.getElementById("quoteAuthor");
+    const elLikes = document.getElementById("likes");
+    const elId = document.getElementById("quoteId");
+    const elFilterStatus = document.getElementById("filterStatus");
+    const elAddInfo = document.getElementById("addInfo");
+
+    const btnGenerate = document.getElementById("btnGenerate");
+    const btnLike = document.getElementById("btnLike");
+    const btnCharsInc = document.getElementById("btnCharsInc");
+    const btnCharsExc = document.getElementById("btnCharsExc");
+    const btnWords = document.getElementById("btnWords");
+
+    const addForm = document.getElementById("addForm");
+    const inQuote = document.getElementById("newQuote");
+    const inAuthor = document.getElementById("newAuthor");
+
+    const filterForm = document.getElementById("filterForm");
+    const inFilterAuthor = document.getElementById("filterAuthor");
+    const btnClearFilter = document.getElementById("btnClearFilter");
+    const btnPrev = document.getElementById("btnPrev");
+    const btnNext = document.getElementById("btnNext");
+
+    /******** Utilities ********/
+    const renderQuote = (idx) => {
+      if (idx == null || idx < 0 || idx >= quotes.length) return;
+      const q = quotes[idx];
+      elQuote.textContent = `"${q.quote}"`;
+      elAuthor.textContent = q.author ? `— ${q.author}` : "";
+      elLikes.textContent = `❤ ${q.likes}`;
+      elId.textContent = `id: ${q.id}`;
+      currentIndex = idx;
+    };
+
+    const randomIndexNotEqual = (last, pool) => {
+      const N = pool.length;
+      if (N === 0) return null;
+      if (N === 1) return pool[0];
+      let pick;
+      do {
+        pick = pool[Math.floor(Math.random() * N)];
+      } while (pick === last);
+      return pick;
+    };
+
+    const showRandom = () => {
+      const pool = filteredIndices.length ? filteredIndices : quotes.map((_, i) => i);
+      const idx = randomIndexNotEqual(previousIndex, pool);
+      if (idx == null) return;
+      previousIndex = idx;
+      renderQuote(idx);
+      // sync filteredCursor if filtering is active
+      if (filteredIndices.length) filteredCursor = filteredIndices.indexOf(idx);
+      updateFilterStatus();
+    };
+
+    const addQuote = (text, author) => {
+      const trimmedText = text.trim();
+      const trimmedAuthor = author.trim();
+      if (!trimmedText) return { ok:false, msg:"Quote cannot be empty." };
+      const nextId = quotes.length ? Math.max(...quotes.map(q => q.id)) + 1 : 0;
+      quotes.push({ id: nextId, author: trimmedAuthor, quote: trimmedText, likes: 0 });
+      return { ok:true, msg:`Added #${nextId} (${trimmedAuthor || "Unknown"})` };
+    };
+
+    const countChars = (includeSpaces = true) =>
+      currentIndex == null ? 0 :
+      includeSpaces ? quotes[currentIndex].quote.length
+                    : quotes[currentIndex].quote.replace(/\s+/g, "").length;
+
+    const countWords = () =>
+      currentIndex == null ? 0 :
+      (quotes[currentIndex].quote.trim().match(/\S+/g) || []).length;
+
+    const setFilter = (authorName) => {
+      const needle = authorName.trim().toLowerCase();
+      filteredIndices = !needle
+        ? []
+        : quotes
+            .map((q, i) => ({ i, match: (q.author || "").toLowerCase().includes(needle) }))
+            .filter(o => o.match)
+            .map(o => o.i);
+      filteredCursor = 0;
+      if (filteredIndices.length) {
+        renderQuote(filteredIndices[0]);
+        previousIndex = filteredIndices[0];
+      } else if (needle) {
+        elQuote.textContent = `No quotes found for author: "${authorName}"`;
+        elAuthor.textContent = "";
+        elLikes.textContent = "❤ 0";
+        elId.textContent = "id: –";
+        currentIndex = null;
+      } else {
+        // cleared filter: just keep current as-is
+      }
+      updateFilterStatus();
+    };
+
+    const updateFilterStatus = () => {
+      if (!filteredIndices.length) {
+        elFilterStatus.textContent = "Filter: none";
+        return;
+      }
+      elFilterStatus.textContent =
+        `Filter: ${inFilterAuthor.value.trim() || "(unknown)"} — ` +
+        `Quote ${filteredCursor + 1} of ${filteredIndices.length}`;
+    };
+
+    /******** Event wiring ********/
+    btnGenerate.addEventListener("click", showRandom);
+
+    btnLike.addEventListener("click", () => {
+      if (currentIndex == null) return;
+      quotes[currentIndex].likes += 1;
+      elLikes.textContent = `❤ ${quotes[currentIndex].likes}`;
+    });
+
+    btnCharsInc.addEventListener("click", () => {
+      const n = countChars(true);
+      alert(`#chars (with spaces): ${n}`);
+    });
+
+    btnCharsExc.addEventListener("click", () => {
+      const n = countChars(false);
+      alert(`#chars (no spaces): ${n}`);
+    });
+
+    btnWords.addEventListener("click", () => {
+      const n = countWords();
+      alert(`#words: ${n}`);
+    });
+
+    addForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const res = addQuote(inQuote.value, inAuthor.value);
+      elAddInfo.textContent = res.msg;
+      if (res.ok) {
+        inQuote.value = "";
+        inAuthor.value = "";
+        // keep filter consistent if active
+        if (filteredIndices.length) setFilter(inFilterAuthor.value);
+      }
+    });
+
+    filterForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      setFilter(inFilterAuthor.value);
+    });
+
+    btnClearFilter.addEventListener("click", () => {
+      inFilterAuthor.value = "";
+      setFilter("");
+    });
+
+    btnPrev.addEventListener("click", () => {
+      if (!filteredIndices.length) return;
+      filteredCursor = (filteredCursor - 1 + filteredIndices.length) % filteredIndices.length;
+      renderQuote(filteredIndices[filteredCursor]);
+      previousIndex = filteredIndices[filteredCursor];
+      updateFilterStatus();
+    });
+
+    btnNext.addEventListener("click", () => {
+      if (!filteredIndices.length) return;
+      filteredCursor = (filteredCursor + 1) % filteredIndices.length;
+      renderQuote(filteredIndices[filteredCursor]);
+      previousIndex = filteredIndices[filteredCursor];
+      updateFilterStatus();
+    });
+
+    // optional: start with a random one
+    showRandom();
+  </script>
+</body>
+</html>
